@@ -1,4 +1,12 @@
 
-from .attention import ScaledDotProductAttention, MultiHeadAttention
+from .attention import (
+	ScaledDotProductAttention,
+	MultiHeadAttention,
+	EnhancedMultiHeadAttention,
+)
 
-__all__ = ["ScaledDotProductAttention", "MultiHeadAttention"]
+__all__ = [
+	"ScaledDotProductAttention",
+	"MultiHeadAttention",
+	"EnhancedMultiHeadAttention",
+]

@@ -80,6 +80,45 @@ class MultiHeadAttention(nn.Module):
 
         return out, attn
 
+class EnhancedMultiHeadAttention(nn.Module):
+    def __init__(self, d_model, num_heads, dropout=0.1, use_causal_mask=False):
+        super().__init__()
+        self.mha = MultiHeadAttention(d_model, num_heads)
+        self.dropout = nn.Dropout(dropout)
+        self.layer_norm = nn.LayerNorm(d_model)
+        self.use_causal_mask = use_causal_mask
+
+    def _get_causal_mask(self, seq_len):
+        """Generates a causal mask (triangular) for self-attention.
+        Args:
+            seq_len: length of the sequence
+        Returns:
+            mask: [1, 1, seq_len, seq_len] boolean tensor
+        """
+        mask = torch.tril(torch.ones((seq_len, seq_len), dtype=torch.bool))
+        return mask.unsqueeze(0).unsqueeze(0)
+
+    def forward(self, x, mask=None):
+        """Self-attention with dropout and layer normalization.
+        Args:
+            x: [batch_size, seq_len, d_model]
+            mask: optional boolean mask [batch_size, 1, 1, seq_len]
+        Returns:
+            out:  [batch_size, seq_len, d_model]
+            attn: [batch_size, heads, seq_len, seq_len]
+        """
+        x_norm = self.layer_norm(x)
+
+        if self.use_causal_mask:
+            seq_len = x.size(1)
+            mask = self._get_causal_mask(seq_len)
+        
+        attention_out, attention = self.mha(x_norm, mask=mask)
+
+        attention_out = self.dropout(attention_out)
+
+        return x + attention_out, attention
+
 
 def test_multihead_attention():
     torch.manual_seed(42)
@@ -96,6 +135,21 @@ def test_multihead_attention():
         print("Attention shape:", attn.shape)
     except NotImplementedError as e:
         print("Implement the TODOs to run the test.")
+
+
+def test_multihead_attention_with_dropout_and_layernorm():
+    torch.manual_seed(42)
+    batch_size = 2
+    seq_len = 5
+    d_model = 32
+    num_heads = 4
+
+    x = torch.randn(batch_size, seq_len, d_model)
+    mha_ln = EnhancedMultiHeadAttention(d_model, num_heads)
+
+    out, attn = mha_ln(x)
+    print("Output shape with LayerNorm and Dropout:", out.shape)
+    print("Attention shape with LayerNorm and Dropout:", attn.shape)
 
 
 def acceptance_tests():
@@ -124,4 +178,5 @@ def acceptance_tests():
 
 if __name__ == "__main__":
     test_multihead_attention()
+    test_multihead_attention_with_dropout_and_layernorm()
     acceptance_tests()
