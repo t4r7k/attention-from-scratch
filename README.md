@@ -1,5 +1,5 @@
 
-# Multi-Head Scaled Dot-Product Attention — Home Task
+# Multi-Head Scaled Dot-Product Attention — Challenge
 
 A minimal, CPU-only PyTorch assignment for implementing **Scaled Dot-Product Attention** and **Multi-Head Attention** from scratch.
 
