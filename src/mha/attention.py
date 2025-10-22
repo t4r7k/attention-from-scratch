@@ -18,24 +18,19 @@ class ScaledDotProductAttention(nn.Module):
             output: [batch_size, heads, seq_len, d_k]
             attn:   [batch_size, heads, seq_len, seq_len]
         """
-        # TODO: compute attention scores via Q @ K^T
-        # scores = ?  # shape: [b, h, Lq, Lk]
 
-        # TODO: scale by sqrt(d_k)
-        # d_k = Q.size(-1)
-        # scores = ?
+        scores = torch.matmul(Q, K.transpose(-2, -1))
 
-        # TODO: optionally apply mask (False entries should be masked out as -inf)
-        # if mask is not None:
-        #     scores = scores.masked_fill(~mask, float('-inf'))
+        d_k = Q.size(-1)
+        scores = scores / math.sqrt(d_k)
 
-        # TODO: softmax over key dimension and use to weight V
-        # attn = ?
-        # output = ?
+        if mask is not None:
+            scores = scores.masked_fill(~mask, float('-inf'))
 
-        # return output, attn
-        raise NotImplementedError("Implement ScaledDotProductAttention.forward")
+        attn = F.softmax(scores, dim=-1)
+        output = torch.matmul(attn, V)
 
+        return output, attn
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, num_heads):
@@ -70,25 +65,20 @@ class MultiHeadAttention(nn.Module):
         """
         b, L, d_model = x.shape
 
-        # TODO: compute Q, K, V projections
-        # Q = self.W_q(x)
-        # K = self.W_k(x)
-        # V = self.W_v(x)
+        Q = self.W_q(x)
+        K = self.W_k(x)
+        V = self.W_v(x)
 
-        # TODO: split heads -> [b, h, L, d_k]
-        # Q = self._split_heads(Q)
-        # K = self._split_heads(K)
-        # V = self._split_heads(V)
+        Q = self._split_heads(Q)
+        K = self._split_heads(K)
+        V = self._split_heads(V)
 
-        # TODO: apply attention
-        # out_heads, attn = self.attn(Q, K, V, mask=mask)
+        out_heads, attn = self.attn(Q, K, V, mask=mask)
 
-        # TODO: concat heads and project
-        # out = out_heads.transpose(1, 2).contiguous().view(b, L, d_model)
-        # out = self.W_o(out)
+        out = out_heads.transpose(1, 2).contiguous().view(b, L, d_model)
+        out = self.W_o(out)
 
-        # return out, attn
-        raise NotImplementedError("Implement MultiHeadAttention.forward")
+        return out, attn
 
 
 def test_multihead_attention():
@@ -134,5 +124,4 @@ def acceptance_tests():
 
 if __name__ == "__main__":
     test_multihead_attention()
-    # Uncomment after implementation
-    # acceptance_tests()
+    acceptance_tests()
